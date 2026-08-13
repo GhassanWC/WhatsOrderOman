@@ -1,0 +1,29 @@
+# .NET
+bin/
+obj/
+*.user
+.vs/
+TestResults/
+artifacts/
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+yarn-error.log
+
+# Environment / secrets — never commit real credentials
+.env
+.env.local
+appsettings.Local.json
+*.pfx
+
+# Uploads (runtime data)
+backend/src/WhatsOrder.Api/wwwroot/uploads/
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.idea/
+*.swp

@@ -1,0 +1,61 @@
+# WhatsOrder Oman — full stack.
+#   1. cp .env.example .env   (then edit secrets)
+#   2. docker compose up --build
+#   3. open http://localhost:4200
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-whatsorder}
+      POSTGRES_USER: ${POSTGRES_USER:-whatsorder}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-whatsorder} -d ${POSTGRES_DB:-whatsorder}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__Default: ${ConnectionStrings__Default:-Host=db;Port=5432;Database=${POSTGRES_DB:-whatsorder};Username=${POSTGRES_USER:-whatsorder};Password=${POSTGRES_PASSWORD}}
+      Jwt__Issuer: ${Jwt__Issuer:-WhatsOrder}
+      Jwt__Audience: ${Jwt__Audience:-WhatsOrder}
+      Jwt__SigningKey: ${Jwt__SigningKey:?set Jwt__SigningKey in .env}
+      Jwt__AccessTokenMinutes: ${Jwt__AccessTokenMinutes:-15}
+      Jwt__RefreshTokenDays: ${Jwt__RefreshTokenDays:-14}
+      WhatsApp__Enabled: ${WhatsApp__Enabled:-false}
+      WhatsApp__ApiVersion: ${WhatsApp__ApiVersion:-v20.0}
+      WhatsApp__PhoneNumberId: ${WhatsApp__PhoneNumberId:-}
+      WhatsApp__BusinessAccountId: ${WhatsApp__BusinessAccountId:-}
+      WhatsApp__AccessToken: ${WhatsApp__AccessToken:-}
+      WhatsApp__WebhookVerifyToken: ${WhatsApp__WebhookVerifyToken:-}
+      WhatsApp__AppSecret: ${WhatsApp__AppSecret:-}
+      WhatsApp__UseTemplates: ${WhatsApp__UseTemplates:-false}
+      App__PublicBaseUrl: ${App__PublicBaseUrl:-http://localhost:4200}
+      App__SeedDemoData: ${App__SeedDemoData:-true}
+      Cors__AllowedOrigins__0: ${Cors__AllowedOrigins__0:-http://localhost:4200}
+    ports:
+      - "5000:8080"
+    volumes:
+      - uploads_data:/app/wwwroot/uploads
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "4200:80"
+
+volumes:
+  db_data:
+  uploads_data:
